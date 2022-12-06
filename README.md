@@ -1,5 +1,5 @@
 # Pied Piper- The Music Bot
-![Pied Piper](https://github.com/pratyushgta/pied-piper/blob/master/Pied%20Piper.png)
+![Pied Piper](https://i.imgur.com/BMH6UcT.jpeg)
 
 Pied Piper is an incredibly easy to use music bot for Discord that makes it easy to listen to any of your favorite songs with a group of friends or by yourself! This easy-to-host bot was made using JDA and Lavaplayer.
 
