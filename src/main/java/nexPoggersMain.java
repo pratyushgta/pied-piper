@@ -25,10 +25,8 @@ public class nexPoggersMain {
 
     public static void main(String[] args) throws LoginException, InterruptedException {
 
-        JDABuilder builder = JDABuilder.createDefault("ODkyNDE0OTI0NTE5NzgwNDEy.G6QX6F.eCuoclpRGRmBj_a3PpLSRVWS0eJVbEAQt0z4kA");
-        //OTE1OTcwNTMwODI0Mjk0NTEw.GrmM12.cIpTCaqzxj9jkQDGOF8G1MwsvmsRr1DzoG4dC0 os
-        //OTIzOTk0MzQ1NjcyMTY3NTA1.YcYGyg.fpri473U7Fw8lCqWA5gmcs7MzcU ppp
-        //ODkyNDE0OTI0NTE5NzgwNDEy.G6QX6F.eCuoclpRGRmBj_a3PpLSRVWS0eJVbEAQt0z4kA dandy
+        JDABuilder builder = JDABuilder.createDefault("");
+
         builder.enableIntents(GatewayIntent.GUILD_PRESENCES);
         builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
         builder.enableCache(CacheFlag.ACTIVITY);
