@@ -6,7 +6,8 @@ import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +15,16 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class contains methods for fast-forwarding / reversing a track
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
+
 public class SeekSlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
 
         if (event.getName().equals("ff")) {
             TextChannel channel = event.getTextChannel();
@@ -55,15 +64,17 @@ public class SeekSlashCommand extends ListenerAdapter {
                         }
 
                     }
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException ex) {
+                    event.reply("⚠️ Integer. aka Number. Is all that you had to enter...\nError: "+ex).queue();
                 }
                 return;
             }
 
-            int input = operator1.getAsInt();
+            int input = (int) operator1.getAsLong();
 
             int initialSeek;
             long maxLength = track.getDuration();
+
             try {
                 initialSeek = input;
                 long amounttoSeek = initialSeek * 1000L;
@@ -79,8 +90,8 @@ public class SeekSlashCommand extends ListenerAdapter {
                     }
 
                 }
-            } catch (NumberFormatException ignored) {
-
+            } catch (NumberFormatException ex) {
+                event.reply("⚠️ Integer. aka Number. Is all that you had to enter...\nError: "+ex).queue();
             }
         } else if (event.getName().equals("rev")) {
             TextChannel channel = event.getTextChannel();
@@ -120,12 +131,13 @@ public class SeekSlashCommand extends ListenerAdapter {
                         }
 
                     }
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException ex) {
+                    event.reply("⚠️ Integer. aka Number. Is all that you had to enter...\nError: "+ex).queue();
                 }
                 return;
             }
 
-            int input = operator1.getAsInt();
+            int input = (int) operator1.getAsLong();
 
             int initialSeek;
 
@@ -141,7 +153,8 @@ public class SeekSlashCommand extends ListenerAdapter {
                     event.reply(String.format("✅ **%d min, %d seconds reversed**", TimeUnit.MILLISECONDS.toMinutes(amounttoSeek), TimeUnit.MILLISECONDS.toSeconds(amounttoSeek) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(amounttoSeek)))).queue();
                 }
 
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException ex) {
+                event.reply("⚠️ Integer. aka Number. Is all that you had to enter...\nError: "+ex).queue();
 
             }
         } else if (event.getName().equals("seek")) {

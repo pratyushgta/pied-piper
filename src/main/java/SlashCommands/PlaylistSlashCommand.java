@@ -9,7 +9,8 @@ import lavaplayer.RequestMetadata;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -19,9 +20,16 @@ import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+/**
+ * This class contains methods for processing and playing YouTube playlists only
+ * For Discord SLASH COMMANDS. Redundant class. Will be removed
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class PlaylistSlashCommand extends ListenerAdapter {
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("playlist")) {
             TextChannel channel = event.getTextChannel();
             VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
@@ -44,7 +52,7 @@ public class PlaylistSlashCommand extends ListenerAdapter {
 
             if (musicManager.scheduler.streamer) {
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setColor(Color.red);
+                eb.setColor(new Color(220,77,77));
                 eb.setTitle("\uD83D\uDEAB Cannot play music while Streamer Mode is on!");
                 eb.setDescription("Check out `-streamer` or `/streamer` to know more.");
                 event.replyEmbeds(eb.build()).queue();
@@ -81,11 +89,11 @@ public class PlaylistSlashCommand extends ListenerAdapter {
                 event.reply("✓").queue();
                 musicManager.scheduler.PlayCmd.setTitle("\uD83D\uDD0D Searching...");
                 musicManager.scheduler.PlayCmd.setDescription("");
-                musicManager.scheduler.PlayCmd.setColor(Color.yellow);
+                musicManager.scheduler.PlayCmd.setColor(new Color(242,202,9));
                 musicManager.scheduler.Play = musicManager.scheduler.PlayCmd.build();
                 RequestMetadata rm = new RequestMetadata(event.getUser());
                 PlayerManager.getInstance()
-                        .loadAndPlay(channel, link, rm, true, false,null, null);
+                        .loadAndPlay(channel, link, rm, true, false,false, event, null);
             } else {
                 musicManager.scheduler.search = 0;
                 musicManager.scheduler.searchQueue.clear();
@@ -96,7 +104,7 @@ public class PlaylistSlashCommand extends ListenerAdapter {
                 event.reply("✓").queue();
                 musicManager.scheduler.PlayCmd.setTitle("\uD83D\uDD0D Searching...");
                 musicManager.scheduler.PlayCmd.setDescription("");
-                musicManager.scheduler.PlayCmd.setColor(Color.yellow);
+                musicManager.scheduler.PlayCmd.setColor(new Color(242,202,9));
                 musicManager.scheduler.Play = musicManager.scheduler.PlayCmd.build();
 
                 // channel.sendMessage("\uD83D\uDD0D Searching...").queue();
@@ -109,11 +117,12 @@ public class PlaylistSlashCommand extends ListenerAdapter {
 
 
                 PlayerManager.getInstance()
-                        .loadAndPlay(channel, link, rm, true, false,null, null);
+                        .loadAndPlay(channel, link, rm, true, false,false, event, null);
                 //User user = new new RequestMetadata(owner)
             }
         }
     }
+
     private boolean isUrl(String url) {
         try {
             new URI(url);

@@ -6,7 +6,8 @@ import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
@@ -16,8 +17,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 
+/**
+ * This class contains methods for playing a specified track from the queue
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ * BetterQueue by Pratyush Kumar
+ */
+
 public class QueuePlaySlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("queue") && Objects.equals(event.getSubcommandName(), "play")) {
 
             TextChannel channel = event.getTextChannel();
@@ -38,31 +47,13 @@ public class QueuePlaySlashCommand extends ListenerAdapter {
                 return;
             }
 
-            int input = operator1.getAsInt();
-            int trackno = input;
-            if (trackno - 1 > queue.size()) {
+            int trackno = (int) operator1.getAsLong();
+
+            if (trackno-1  >= queue.size() || trackno <= 0) {
                 event.reply("⚠️theee....which song?").queue();
-            } else if (trackno == 1) {
-                musicManager.scheduler.nextTrack();
-                event.replyFormat("⏭️ Now Playing #" + trackno + ". `" + tempTrackList.get(trackno-1).getInfo().title + "` from the queue.").queue();
             } else {
-                int Pos1=trackno;
-                int Pos2=1;
-                for (int i = 0; i < tempTrackList.size(); i++) {
-                    queue.remove(tempTrackList.get(i));
-                }
-                trackList.add(Pos2 - 1, trackList.remove(Pos1 - 1));
-                for (int i = 0; i < trackList.size(); i++) {
-                    queue.add(trackList.get(i));
-                }
-                if (musicManager.scheduler.repeatAll) {
-                    musicManager.scheduler.queue.offer(audioPlayer.getPlayingTrack().makeClone());
-                    musicManager.scheduler.nextTrack();
-                }
-                else
-                {
-                    musicManager.scheduler.nextTrack();
-                }
+                musicManager.scheduler.pointer = trackno-2;
+                musicManager.scheduler.nextTrack();
                 event.replyFormat("⏭️ Now Playing #" + trackno + ". `" + tempTrackList.get(trackno-1).getInfo().title + "` from the queue.").queue();
             }
         }

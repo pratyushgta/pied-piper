@@ -6,7 +6,8 @@ import lavaplayer.AudioPlayerSendHandler;
 import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
@@ -16,8 +17,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 
+/**
+ * This class contains methods for removing a track from the queue
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ * BetterQueue by Pratyush Kumar
+ */
+
 public class QueueRemoveSlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("queue") && Objects.equals(event.getSubcommandName(), "remove")) {
             TextChannel channel = event.getTextChannel();
             final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
@@ -31,7 +40,7 @@ public class QueueRemoveSlashCommand extends ListenerAdapter {
                 return;
             }
 
-            int input = operator1.getAsInt();
+            int input = (int) operator1.getAsLong();
 
             if (musicManager.scheduler.queue.isEmpty()) {
                 event.reply("\uD83D\uDE36 I'm not thanos. I cannot remove your stubborn sister.").queue();

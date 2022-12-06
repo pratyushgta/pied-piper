@@ -8,11 +8,12 @@ import lavaplayer.RequestMetadata;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,12 +23,19 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class contains methods for searching and displaying results of search query, from YouTube
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class SearchSlashCommand extends ListenerAdapter {
     int start;
     int end;
 
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("search")) {
             TextChannel channel = event.getTextChannel();
 
@@ -53,7 +61,7 @@ public class SearchSlashCommand extends ListenerAdapter {
             start = 0;
             end = 5;
 
-            PlayerManager.getInstance().loadAndPlay(channel, link, rm, false, true, event, null);
+            PlayerManager.getInstance().loadAndPlay(channel, link, rm, false, true, false, event, null);
         }
     }
 
@@ -66,60 +74,8 @@ public class SearchSlashCommand extends ListenerAdapter {
         }
     }
 
-  /*  public void loadAndPlay(TextChannel channel, String trackUrl, RequestMetadata rm, boolean plist, boolean search, SlashCommandInteractionEvent event, int st, int ed) {
-        final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
-
-        final AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
-
-        audioPlayerManager.loadItemOrdered(musicManager, trackUrl, new AudioLoadResultHandler() {
-
-            @Override
-            public void trackLoaded(AudioTrack audioTrack) {
-                event.reply("⭕ Failed to load! Please try again later.").queue();
-            }
-
-            @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                final List<AudioTrack> tracks = playlist.getTracks();
-                RequestMetadata s = rm;
-                musicManager.scheduler.searchQueue.clear();
-                musicManager.scheduler.search = 1;
-                for (int i = 0; i < 5; i++) {
-                    musicManager.scheduler.searchQueue(tracks.get(i));
-                    tracks.get(i).setUserData(s);
-                }
-                final List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.searchQueue);
-                //final MessageAction messageAction = channel.sendMessage("\uD83D\uDCD9  Here are the `"+playlist.getName()+"`\n");
-
-
-                EmbedBuilder eb = new EmbedBuilder();
-                eb.setTitle("\uD83D\uDCD9 Here are the `" + playlist.getName() + "`");
-                for (int i = 0; i < 5; i++) {
-                    final AudioTrack track = trackList.get(i);
-                    final AudioTrackInfo info = track.getInfo();
-                    RequestMetadata rm = trackList.get(i).getUserData(RequestMetadata.class);
-
-                    eb.addField((i + 1) + ". " + info.title, " by " + info.author + " `[" + formatTime(track.getDuration()) + "]`", false);
-                }
-                eb.setFooter("Click on the buttons below to play the track!");
-                event.replyEmbeds(eb.build())
-                        .addActionRow(Button.success("One", "1️⃣️"), Button.success("Two", "2️⃣️"), Button.success("Three", "3️⃣"), Button.success("Four", "4️⃣"), Button.success("Five", "5️⃣")).queue();
-            }
-
-            @Override
-            public void noMatches() {
-                event.reply("\uD83D\uDEAB  Uh oh! Nothing found by " + trackUrl).queue();
-            }
-
-            @Override
-            public void loadFailed(FriendlyException e) {
-                event.reply("⭕ Failed to load! Error: " + e.getMessage()).queue();
-            }
-        });
-    }*/
-
     @Override
-    public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+    public void onButtonClick(@NotNull ButtonClickEvent event) {
 
         if (event.getComponentId().equals("One") || (event.getComponentId().equals("Two")) || (event.getComponentId().equals("Three")) || (event.getComponentId().equals("Four")) || (event.getComponentId().equals("Five"))) {
             VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
@@ -140,14 +96,14 @@ public class SearchSlashCommand extends ListenerAdapter {
 
             if (musicManager.scheduler.streamer) {
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setColor(Color.red);
+                eb.setColor(new Color(220,77,77));
                 eb.setTitle("\uD83D\uDEAB Cannot play music while Streamer Mode is on!");
                 eb.setDescription("Check out `-streamer` or `/streamer` to know more.");
                 event.replyEmbeds(eb.build()).setEphemeral(true).queue();
                 eb.clear();
             } else if (musicManager.scheduler.search == 0) {
                 EmbedBuilder embed = new EmbedBuilder();
-                embed.setColor(Color.yellow);
+                embed.setColor(new Color(242,202,9));
                 embed.setTitle("⚠ Search list is empty");
                 embed.setDescription("You need to search for songs before playing one.");
                 event.editMessageEmbeds(embed.build())
@@ -170,14 +126,21 @@ public class SearchSlashCommand extends ListenerAdapter {
         }
     }
 
-    public void send(int i, ButtonInteractionEvent event) {
+    public void send(int i, ButtonClickEvent event) {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getTextChannel().getGuild());
 
         final List<AudioTrack> searchTrack = new ArrayList<>(musicManager.scheduler.searchQueue);
-        musicManager.scheduler.queue(searchTrack.get(i));
+        //musicManager.scheduler.queue(searchTrack.get(i));
+        RequestMetadata rm = new RequestMetadata(event.getUser());
+        musicManager.scheduler.queue.add(searchTrack.get(i));
+        searchTrack.get(i).setUserData(rm);
+        if (musicManager.scheduler.queue.size() == 1 || musicManager.audioPlayer.getPlayingTrack() == null) {
+            musicManager.scheduler.nextTrack();
+        }
+
         EmbedBuilder embed = new EmbedBuilder();
         if (musicManager.scheduler.queue.isEmpty()) {
-            embed.setColor(Color.green);
+            embed.setColor(new Color(21,86,80));
             embed.setAuthor("\uD83C\uDFB6 Starting to play:");
             embed.setTitle(searchTrack.get(i).getInfo().title, searchTrack.get(i).getInfo().uri);
             event.editMessageEmbeds(embed.build())
@@ -185,7 +148,7 @@ public class SearchSlashCommand extends ListenerAdapter {
 
             embed.clear();
         } else {
-            embed.setColor(Color.green);
+            embed.setColor(new Color(21,86,80));
             embed.setTitle(searchTrack.get(i).getInfo().title, searchTrack.get(i).getInfo().uri);
             embed.setDescription("\uD83C\uDFB5 Added to the queue at position `" + musicManager.scheduler.queue.size() + "`");
             event.editMessageEmbeds(embed.build())

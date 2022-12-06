@@ -1,7 +1,6 @@
 package lavaplayer;
 
 
-import FairQueue.FairQueue;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -9,34 +8,39 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
-import FairQueue.Queueable;
+import org.jmusixmatch.entity.track.TrackData;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ */
 
 public class TaskScheduler extends AudioEventAdapter {
     public final AudioPlayer player;
     public final BlockingQueue<AudioTrack> queue;
+    public final BlockingQueue<AudioTrack> historyQueue; //for use in future
     public final BlockingQueue<AudioTrack> searchQueue;
-    public final BlockingQueue<AudioTrack> historyQueue;
-    private final FairQueue<QueuedTrack> fqueue;
+    public final BlockingQueue<TrackData> LyricsQueue;
+
     public boolean repeating = false;
     public boolean repeatAll = false;
     public boolean streamer = false;
     public String streamerUser = "";
     public int volume = 0;
     public int search = 0;
+    public int pointer = -1;
 
-    public int front=-1; //1st np is -1. 1st song in queue is 0
+    //public int front = -1; //1st np is -1. 1st song in queue is 0
     public AudioTrack lastTrack = null;
-    public boolean skiphistory = false;
-    public boolean rephistory = false;
     public MessageEmbed Play;
     public EmbedBuilder PlayCmd = new EmbedBuilder();
     public EmbedBuilder NowPlayCmd = new EmbedBuilder();
     public EmbedBuilder QueueCmd = new EmbedBuilder();
+
 
     //public GuildMessageReceivedEvent ev;
 
@@ -45,8 +49,8 @@ public class TaskScheduler extends AudioEventAdapter {
         this.player = player;
         this.queue = new LinkedBlockingQueue<>();
         this.searchQueue = new LinkedBlockingQueue<>();
+        this.LyricsQueue = new LinkedBlockingQueue<>();
         this.historyQueue = new LinkedBlockingQueue<>();
-        this.fqueue = new FairQueue<QueuedTrack>();
     }
 
     public void queue(AudioTrack track) {
@@ -55,17 +59,14 @@ public class TaskScheduler extends AudioEventAdapter {
         }
     }
 
-    public FairQueue<QueuedTrack> getQueue()
-    {
-        return fqueue;
+    public void LyricsQueue(TrackData trackx) {
+
+        this.LyricsQueue.offer(trackx);
+
     }
 
     public void searchQueue(AudioTrack track) {
         this.searchQueue.offer(track);
-    }
-
-    public void historyQueue(AudioTrack track) {
-        this.historyQueue.offer(track);
     }
 
     public void userqueue(String name) {
@@ -73,47 +74,37 @@ public class TaskScheduler extends AudioEventAdapter {
 
 
     public void nextTrack() {
-       /* front++;
+        pointer++;
+        System.out.println("++ value: " + pointer);
         final List<AudioTrack> trackList = new ArrayList<>(queue);
-        this.player.startTrack(trackList.get(front),false);*/ //CIRCULAR QUEUE
-        this.player.startTrack(this.queue.poll(),false);
+        this.player.startTrack(trackList.get(pointer).makeClone(), false); //CIRCULAR QUEUE
+    }
+    //this.player.startTrack(this.queue.poll(), false);
+
+
+    public void queueMessages() {
+
     }
 
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         this.lastTrack = track;
-
-
-        if (!skiphistory) {
-            historyQueue.offer(track.makeClone());
-            if (rephistory) {
-                final List<AudioTrack> htrackList = new ArrayList<>(historyQueue);
-                historyQueue.remove(htrackList.get(historyQueue.size() - 1));
-            }
-        }
-
-        /*if(!skiphistory)
-        {
-            historyQueue.offer(track.makeClone());
-        }
-        else if(rephistory)
-        {
-            final List<AudioTrack> htrackList = new ArrayList<>(historyQueue);
-            historyQueue.remove(htrackList.get(historyQueue.size() - 1));
-        }*/
-
         if (endReason.mayStartNext) {
             if (this.repeating) {
                 this.player.startTrack(track.makeClone(), false);
-                return;
+                //nextTrack();
             } else if (this.repeatAll) {
                 // this.queue.offer(track);
-                this.queue.offer(track.makeClone());
+                //this.queue.offer(track.makeClone());
+                if(pointer == this.queue.size()-1){
+                    pointer = -1;
+                }
                 nextTrack();
-                return;
             }
-            nextTrack();
+            else if(pointer < this.queue.size()-1 && !queue.isEmpty()) {
+                nextTrack();
+            }
         }
     }
 }

@@ -2,17 +2,24 @@ package Misc;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
+import utils.config;
 
 import java.awt.*;
 import java.util.Objects;
 import java.util.Random;
 
+/**
+ * This class contains methods for handling bug and suggestion reports
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class ReportSlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("report")) {
             OptionMapping operator1 = event.getOption("bug");
             OptionMapping operator2 = event.getOption("suggestion");
@@ -26,7 +33,7 @@ public class ReportSlashCommand extends ListenerAdapter {
                 embed1.addField("Aliases:", "`report`", true);
                 embed1.addField("Syntax:", "`/report <bug / suggestion> <your_description>`", true);
                 embed1.addField("Example:", "`/report bug the bug flies off and comes back down send haalp asap`", true);
-                embed1.setColor(Color.white);
+                embed1.setColor(new Color(216,213,190));
                 event.getHook().sendMessageEmbeds(embed1.build()).queue();
                 embed1.clear();
             } else if (operator2 == null) {
@@ -36,7 +43,7 @@ public class ReportSlashCommand extends ListenerAdapter {
                 int reportno = random.nextInt(100000);
                 EmbedBuilder embed1 = new EmbedBuilder();
                 embed1.setTitle("\uD83D\uDCDD BUG REPORT");
-                embed1.setColor(Color.lightGray);
+                embed1.setColor(new Color(216, 213, 190)); ;
 
                 embed1.setDescription(query);
                 embed1.addField("Reported by: ", "" + event.getUser().getName(), false);
@@ -47,12 +54,12 @@ public class ReportSlashCommand extends ListenerAdapter {
 
                 EmbedBuilder embed2 = new EmbedBuilder();
                 embed2.setTitle("\uD83D\uDCDD Send Confirmation: ");
-                embed2.setColor(Color.lightGray);
+                embed2.setColor(new Color(216, 213, 190)); ;
                 embed2.addField("Thank you for your reporting a bug! You are the one making Piped Piper better, every day!", "Your report number is mentioned below. You can use this number to get in touch with Pied Piper Support#1168 regarding your query. Please DO NOT share this number with others as it helps identify your identity.\n\n**Here is a transcript of your report:**\n`" + query + "`", false);
                 embed2.setFooter("Report No.: BUG" + reportno);
 
-
-                User user = event.getJDA().retrieveUserById("349907501829062656").complete();
+                config ob = new config();
+                User user = event.getJDA().retrieveUserById(ob.mod).complete();
                 user.openPrivateChannel().flatMap(channel -> channel.sendMessageEmbeds(embed1.build())).queue();
                 event.getUser().openPrivateChannel().flatMap(channel -> channel.sendMessageEmbeds(embed2.build())).queue();
                 event.reply("✅ Your bug report has been sent! Please check your DM for more info.").setEphemeral(true).queue();
@@ -64,7 +71,7 @@ public class ReportSlashCommand extends ListenerAdapter {
                 int reportno = random.nextInt(10000);
                 EmbedBuilder embed1 = new EmbedBuilder();
                 embed1.setTitle("\uD83D\uDCDD SUGGESTION REPORT");
-                embed1.setColor(Color.lightGray);
+                embed1.setColor(new Color(216, 213, 190)); ;
 
                 embed1.setDescription(query);
                 embed1.addField("Reported by: ", "" + event.getUser().getName(), false);
@@ -75,12 +82,12 @@ public class ReportSlashCommand extends ListenerAdapter {
 
                 EmbedBuilder embed2 = new EmbedBuilder();
                 embed2.setTitle("\uD83D\uDCDD Send Confirmation: ");
-                embed2.setColor(Color.lightGray);
+                embed2.setColor(new Color(216, 213, 190)); ;
                 embed2.addField("Thank you for your suggestions!", "Your report number is mentioned below. You can use this number to get in touch with Pied Piper Support#1168 regarding your query. Please DO NOT share this number with others as it helps identify your identity.\n\n**Here is a transcript of your report:**\n`" + query + "`", false);
                 embed2.setFooter("Report No.: SUG" + reportno);
 
-
-                User user = event.getJDA().retrieveUserById("349907501829062656").complete();
+                config ob = new config();
+                User user = event.getJDA().retrieveUserById(ob.mod).complete();
                 user.openPrivateChannel().flatMap(channel -> channel.sendMessageEmbeds(embed1.build())).queue();
                 event.getUser().openPrivateChannel().flatMap(channel -> channel.sendMessageEmbeds(embed2.build())).queue();
                 event.reply("✅ Thank You for sharing your valuable suggestions! Please check your DM for more info.").setEphemeral(true).queue();

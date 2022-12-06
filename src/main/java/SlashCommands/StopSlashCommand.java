@@ -9,9 +9,10 @@ import lavaplayer.RequestMetadata;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.Button;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -21,13 +22,20 @@ import java.util.List;
 import static java.awt.Color.gray;
 import static java.awt.Color.yellow;
 
+/**
+ * This class contains methods to stop playing a track
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class StopSlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("stop")) {
 
             TextChannel channel = event.getTextChannel();
-            VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
-            VoiceChannel SelfConnected = (VoiceChannel) event.getGuild().getSelfMember().getVoiceState().getChannel();
+            VoiceChannel connectedChannel = event.getMember().getVoiceState().getChannel();
+            VoiceChannel SelfConnected = event.getGuild().getSelfMember().getVoiceState().getChannel();
 
             final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
             final AudioPlayer audioPlayer = musicManager.audioPlayer;
@@ -58,12 +66,25 @@ public class StopSlashCommand extends ListenerAdapter {
 
             eb.clear();
 
+            /*musicManager.scheduler.player.stopTrack();
+            musicManager.scheduler.queue.clear();
+            musicManager.scheduler.pointer=-1;*/
+
             musicManager.scheduler.player.stopTrack();
             musicManager.scheduler.queue.clear();
+            musicManager.scheduler.repeatAll = false;
+            musicManager.scheduler.repeating = false;
+            musicManager.scheduler.search = 0;
+            musicManager.scheduler.searchQueue.clear();
+            musicManager.scheduler.QueueCmd.clear();
+            musicManager.scheduler.NowPlayCmd.clear();
+            musicManager.scheduler.PlayCmd.clear();
+            musicManager.audioPlayer.setPaused(false);
+            musicManager.scheduler.pointer = -1;
 
             eb.setTitle("⭕ No track playing!");
-            eb.setColor(yellow);
-            if (musicManager.scheduler.historyQueue.size() > 0)
+            eb.setColor(new Color(242, 202, 9));
+            if (musicManager.scheduler.queue.size() > 0)
                 eb.setDescription("✅ The player has stopped and the queue has been cleared!\nPress ⏮ to replay the previous queue.");
             else
                 eb.setDescription("✅ The player has stopped and the queue has been cleared!");
@@ -71,8 +92,8 @@ public class StopSlashCommand extends ListenerAdapter {
 
         } else if (event.getName().equals("pause")) {
             TextChannel channel = event.getTextChannel();
-            VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
-            VoiceChannel SelfConnected = (VoiceChannel) event.getGuild().getSelfMember().getVoiceState().getChannel();
+            VoiceChannel connectedChannel = event.getMember().getVoiceState().getChannel();
+            VoiceChannel SelfConnected = event.getGuild().getSelfMember().getVoiceState().getChannel();
 
             final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
             final AudioPlayer audioPlayer = musicManager.audioPlayer;
@@ -119,7 +140,7 @@ public class StopSlashCommand extends ListenerAdapter {
 
 
             event.replyEmbeds(eb.build())
-                    .addActionRow(musicManager.scheduler.historyQueue.size() > 0 ? Button.success("Previous", "⏮️") : Button.success("Previous", "⏮️").asDisabled(), musicManager.audioPlayer.isPaused() ? Button.success("Resume", "▶️") : Button.success("Pause", "⏸️"),
+                    .addActionRow(musicManager.scheduler.queue.size() > 0 ? Button.success("Previous", "⏮️") : Button.success("Previous", "⏮️").asDisabled(), musicManager.audioPlayer.isPaused() ? Button.success("Resume", "▶️") : Button.success("Pause", "⏸️"),
                             Button.success("Skip", "⏭️"), musicManager.scheduler.repeatAll ? Button.success("repeatall", "\uD83D\uDD01") : Button.success("Loop", "\uD83D\uDD02"), Button.success("Stop", "⏹")).queue();
 
 
@@ -144,7 +165,7 @@ public class StopSlashCommand extends ListenerAdapter {
 
             if (musicManager.scheduler.streamer) {
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setColor(Color.red);
+                eb.setColor(new Color(220,77,77));
                 eb.setTitle("Cannot unpause while Streamer Mode is on!");
                 eb.setDescription("Check out `-streamer` or `/streamer` to know more.");
                 event.replyEmbeds(eb.build()).queue();
@@ -152,8 +173,7 @@ public class StopSlashCommand extends ListenerAdapter {
                 return;
             }
 
-            if(audioPlayer.getPlayingTrack()==null)
-            {
+            if (audioPlayer.getPlayingTrack() == null) {
                 event.replyFormat("⚠ Ahhh...what? Are you a robot?").queue();
                 return;
             }
@@ -166,8 +186,8 @@ public class StopSlashCommand extends ListenerAdapter {
 
         } else if (event.getName().equals("clear")) {
             TextChannel channel = event.getTextChannel();
-            VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
-            VoiceChannel SelfConnected = (VoiceChannel) event.getGuild().getSelfMember().getVoiceState().getChannel();
+            VoiceChannel connectedChannel = event.getMember().getVoiceState().getChannel();
+            VoiceChannel SelfConnected = event.getGuild().getSelfMember().getVoiceState().getChannel();
             if (connectedChannel == null) {
                 event.reply("\uD83D\uDE42 Stop disturbing me.").queue();
                 return;
@@ -180,16 +200,12 @@ public class StopSlashCommand extends ListenerAdapter {
             }
 
             final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
-            final AudioPlayer audioPlayer = musicManager.audioPlayer;
-            final AudioTrack track = audioPlayer.getPlayingTrack();
 
 
             musicManager.scheduler.queue.clear();
-            musicManager.scheduler.historyQueue.clear();
+            musicManager.scheduler.pointer = -1;
             event.reply("✅ The queue has been cleared!").queue();
-        }
-
-        else if (event.getName().equals("replay")) {
+        } else if (event.getName().equals("replay")) {
             TextChannel channel = event.getTextChannel();
             VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
             VoiceChannel SelfConnected = (VoiceChannel) event.getGuild().getSelfMember().getVoiceState().getChannel();
@@ -209,82 +225,59 @@ public class StopSlashCommand extends ListenerAdapter {
 
             if (musicManager.scheduler.streamer) {
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setColor(Color.red);
+                eb.setColor(new Color(220,77,77));
                 eb.setTitle("Cannot replay while Streamer Mode is on!");
                 eb.setDescription("Check out `-streamer` or `/streamer` to know more.");
                 event.replyEmbeds(eb.build()).queue();
                 eb.clear();
                 return;
-            }
-            else if (musicManager.scheduler.repeatAll) {
-                musicManager.scheduler.repeatAll=false;
+            } else if (musicManager.scheduler.repeatAll) {
+                musicManager.scheduler.repeatAll = false;
                 final java.util.List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.queue);
                 final java.util.List<AudioTrack> temptrackList = new ArrayList<>(musicManager.scheduler.queue);
                 final AudioTrack currenttrack = audioPlayer.getPlayingTrack();
                 final AudioTrack prevtrack = trackList.get(trackList.size() - 1);
 
                 musicManager.scheduler.queue.clear();
-                temptrackList.remove(temptrackList.size()-1);
+                temptrackList.remove(temptrackList.size() - 1);
 
                 musicManager.scheduler.queue.offer(prevtrack.makeClone());
 
                 musicManager.scheduler.queue.offer(currenttrack.makeClone());
 
-                for(int i=0;i<temptrackList.size();i++)
-                {
-                    musicManager.scheduler.queue.offer(temptrackList.get(i).makeClone());
+                for (AudioTrack audioTrack : temptrackList) {
+                    musicManager.scheduler.queue.offer(audioTrack.makeClone());
                 }
-                musicManager.scheduler.repeatAll=true;
+                musicManager.scheduler.repeatAll = true;
                 musicManager.scheduler.nextTrack();
                 event.reply("\uD83D\uDD01  **Replaying**: " + prevtrack.getInfo().title).queue();
 
             } else {
-                if (musicManager.scheduler.historyQueue.size() > 0 && audioPlayer.getPlayingTrack()!=null || musicManager.scheduler.historyQueue.size() > 0 && audioPlayer.isPaused()) {
-                    final java.util.List<AudioTrack> htrackList = new ArrayList<>(musicManager.scheduler.historyQueue);
-                    final java.util.List<AudioTrack> temptrackList = new ArrayList<>(musicManager.scheduler.queue);
+                if (musicManager.scheduler.queue.size() > 0 && audioPlayer.getPlayingTrack() != null && !musicManager.scheduler.queue.isEmpty() || musicManager.scheduler.pointer > 0 && audioPlayer.isPaused() && !musicManager.scheduler.queue.isEmpty()) {
+                    musicManager.scheduler.pointer = musicManager.scheduler.pointer - 2;
 
-                    final AudioTrack prevtrack = htrackList.get(htrackList.size() - 1);
-                    final AudioTrack currenttrack = audioPlayer.getPlayingTrack();
-
-                    musicManager.scheduler.queue.clear();
-
-                    int repeatCounter = 0;
-
-                    if (musicManager.scheduler.repeating)
-                        musicManager.scheduler.repeating = false;
-
-                    musicManager.scheduler.queue.offer(prevtrack.makeClone());
-
-                    musicManager.scheduler.queue.offer(currenttrack.makeClone());
-
-                    musicManager.scheduler.skiphistory = true;
-
-                    event.reply("\uD83D\uDD01  **Replaying**: " + prevtrack.getInfo().title).queue();
-                    for (int i = 0; i < temptrackList.size(); i++) {
-                        musicManager.scheduler.queue.offer(temptrackList.get(i).makeClone());
+                    if (musicManager.scheduler.pointer < 0) {
+                        musicManager.scheduler.pointer = -1;
                     }
+
                     musicManager.scheduler.nextTrack();
-                    musicManager.scheduler.historyQueue.remove(htrackList.get(htrackList.size() - 1));
+                } else if (musicManager.scheduler.queue.size() > 0 && audioPlayer.getPlayingTrack() == null && !musicManager.scheduler.queue.isEmpty()) {
 
-                    musicManager.scheduler.skiphistory = false;
-                } else if (musicManager.scheduler.historyQueue.size() > 0 && audioPlayer.getPlayingTrack()==null){
-                    final java.util.List<AudioTrack> htrackList = new ArrayList<>(musicManager.scheduler.historyQueue);
-                    final List<AudioTrack> temptrackList = new ArrayList<>(musicManager.scheduler.queue);
-
-                    final AudioTrack prevtrack = htrackList.get(htrackList.size() - 1);
-                    musicManager.scheduler.queue.clear();
-                    musicManager.scheduler.queue.offer(prevtrack.makeClone());
+                    musicManager.scheduler.pointer = -1;
+                    musicManager.scheduler.nextTrack();
+                    final java.util.List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.queue);
+                    final AudioTrack prevtrack = trackList.get(trackList.size() - 1);
                     event.reply("\uD83D\uDD01  **Replaying**: " + prevtrack.getInfo().title).queue();
-                    for (int i = 0; i < temptrackList.size(); i++) {
-                        musicManager.scheduler.queue.offer(temptrackList.get(i).makeClone());
-                    }
-                    musicManager.scheduler.nextTrack();
-                    musicManager.scheduler.historyQueue.remove(htrackList.get(htrackList.size() - 1));
-                } else{
-                    event.reply("⚠ Failed to replay! Unable to find the previously played track.").queue();
+
+                } else if (musicManager.scheduler.queue.isEmpty()) {
+                    event.reply("\uD83D\uDEAB The queue is empty. Cannot replay your past actions.").queue();
+                } else {
+                    final AudioTrack track = audioPlayer.getPlayingTrack();
+                    track.setPosition(0);
+                    event.reply("\uD83D\uDD01  **Replaying**: " + musicManager.audioPlayer.getPlayingTrack().getInfo().title).queue();
+
                 }
             }
         }
-
     }
 }

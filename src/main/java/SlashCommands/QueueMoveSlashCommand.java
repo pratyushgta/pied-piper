@@ -6,7 +6,8 @@ import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
@@ -16,8 +17,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 
+/**
+ * This class contains methods for facilitating movement of tracks in a queue
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ * BetterQueue by Pratyush Kumar
+ */
+
+
 public class QueueMoveSlashCommand extends ListenerAdapter {
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("queue") && Objects.equals(event.getSubcommandName(), "move")) {
 
             TextChannel channel = event.getTextChannel();
@@ -51,8 +61,8 @@ public class QueueMoveSlashCommand extends ListenerAdapter {
                 return;
             }
 
-            int Pos1 = operator1.getAsInt();
-            int Pos2 = operator2.getAsInt();
+            int Pos1 = (int) operator1.getAsLong();
+            int Pos2 = (int) operator2.getAsLong();
 
             if (Pos1 == Pos2) {
                 event.reply("⚠️Ha! You thought the devs didn't code this out?").queue();

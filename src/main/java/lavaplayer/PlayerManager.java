@@ -11,17 +11,24 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.interactions.components.Button;
 
 import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-
 import static utils.FormatUtil.formatTime;
+
+/**
+ * This class contains methods related to music playback
+ *
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ */
 
 public class PlayerManager {
     private static PlayerManager INSTANCE;
@@ -33,6 +40,7 @@ public class PlayerManager {
     public PlayerManager() {
         this.musicManagers = new HashMap<>();
         this.audioPlayerManager = new DefaultAudioPlayerManager();
+        //   this.audioPlayerManager = new YoutubeAudioSourceManager()
 
         AudioSourceManagers.registerRemoteSources(this.audioPlayerManager);
         AudioSourceManagers.registerLocalSource(this.audioPlayerManager);
@@ -49,7 +57,8 @@ public class PlayerManager {
     }
 
 
-    public void loadAndPlay(TextChannel channel, String trackUrl, RequestMetadata rm, boolean plist, boolean search, SlashCommandInteractionEvent event1, MessageReceivedEvent event2) {
+    public void loadAndPlay(TextChannel channel, String trackUrl, RequestMetadata rm, boolean plist, boolean search, boolean spotify, SlashCommandEvent event1, MessageReceivedEvent event2) {
+
         final GuildMusicManager musicManager = this.getMusicManager(channel.getGuild());
 
 
@@ -57,39 +66,64 @@ public class PlayerManager {
 
             @Override
             public void trackLoaded(AudioTrack track) {
-                musicManager.scheduler.queue(track);
-                //  musicManager.scheduler.historyQueue(track);
+                /*musicManager.scheduler.queue(track);
+                if(musicManager.scheduler.queue.isEmpty()){
+                    musicManager.scheduler.queue.add(track);
+                }*/
+
+                musicManager.scheduler.queue.add(track);
                 track.setUserData(rm);
 
-                //musicManager.scheduler.fqueue.add(track);
-                // musicManager.scheduler.add
+                if (musicManager.scheduler.queue.size() == 1 || musicManager.audioPlayer.getPlayingTrack() == null) {
+                    musicManager.scheduler.nextTrack();
+                }
 
-                if (musicManager.scheduler.queue.isEmpty()) {
-                    MessageEmbed eb = musicManager.scheduler.Play;
-                    channel.sendMessageEmbeds(eb).queue(message -> {
-                        musicManager.scheduler.PlayCmd.setColor(Color.green);
-                        musicManager.scheduler.PlayCmd.setAuthor("\uD83C\uDFB6 Starting to play:");
-                        musicManager.scheduler.PlayCmd.setTitle(track.getInfo().title, track.getInfo().uri);
-                        message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
-                        musicManager.scheduler.PlayCmd.clear();
+                track.setUserData(rm);
+
+                if (event1 != null) {
+                    event1.deferReply().queue();
+                    EmbedBuilder eb = new EmbedBuilder();
+                    if (musicManager.scheduler.queue.isEmpty()) {
+
+                        eb.setColor(new Color(21,86,80));
+                        eb.setAuthor("\uD83C\uDFB6 Starting to play:");
+                        eb.setTitle(track.getInfo().title, track.getInfo().uri);
+                        event1.getHook().sendMessageEmbeds(eb.build()).queueAfter(2, TimeUnit.SECONDS);
+                        eb.clear();
                         musicManager.scheduler.Play = null;
-                    });
 
-                      /*  musicManager.scheduler.PlayCmd.clear();
-                        channel.sendMessage("\uD83C\uDFB6 Starting to play: `")
-                                .append(tracks.get(0).getInfo().title)
-                                .append('`')
-                                .queue();*/
-                } else {
-                    String pos = String.valueOf(musicManager.scheduler.queue.size());
+                    } else if (!spotify) {
+                        String pos = String.valueOf(musicManager.scheduler.queue.size());
 
-                    MessageEmbed eb = musicManager.scheduler.Play;
-                    channel.sendMessageEmbeds(eb).queue(message -> {
-                        musicManager.scheduler.PlayCmd.setColor(Color.green);
+                        musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
                         musicManager.scheduler.PlayCmd.setTitle(track.getInfo().title, track.getInfo().uri);
                         musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Added to the queue at position `" + pos + "`");
-                        message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
-                    });
+                        event1.getHook().sendMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
+
+                    }
+                } else {
+
+                    if (musicManager.scheduler.queue.isEmpty()) {
+                        MessageEmbed eb = musicManager.scheduler.Play;
+                        channel.sendMessageEmbeds(eb).queue(message -> {
+                            musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
+                            musicManager.scheduler.PlayCmd.setAuthor("\uD83C\uDFB6 Starting to play:");
+                            musicManager.scheduler.PlayCmd.setTitle(track.getInfo().title, track.getInfo().uri);
+                            message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
+                            musicManager.scheduler.PlayCmd.clear();
+                            musicManager.scheduler.Play = null;
+                        });
+                    } else if (!spotify) {
+                        String pos = String.valueOf(musicManager.scheduler.queue.size());
+
+                        MessageEmbed eb = musicManager.scheduler.Play;
+                        channel.sendMessageEmbeds(eb).queue(message -> {
+                            musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
+                            musicManager.scheduler.PlayCmd.setTitle(track.getInfo().title, track.getInfo().uri);
+                            musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Added to the queue at position `" + pos + "`");
+                            message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
+                        });
+                    }
                 }
 
 
@@ -101,79 +135,103 @@ public class PlayerManager {
 
                 if (!plist && !search) {
                     if (playlist.isSearchResult()) {
-                        musicManager.scheduler.queue(tracks.get(0));
+                        //musicManager.scheduler.queue(tracks.get(0));
+                        musicManager.scheduler.queue.add(tracks.get(0));
                         tracks.get(0).setUserData(rm);
-                        //  musicManager.scheduler.historyQueue(tracks.get(0));
-
-                        /*//System.out.println("Success...");
-                        channel.sendMessage("Success").queue();*/
+                        if (musicManager.scheduler.queue.size() == 1 || musicManager.audioPlayer.getPlayingTrack() == null) { //musicManager.scheduler.queue.isEmpty() ||
+                            //musicManager.scheduler.queue.add(tracks.get(0));
+                            musicManager.scheduler.nextTrack();
+                        }
                     }
 
-                    if (musicManager.scheduler.queue.isEmpty()) {
-                        MessageEmbed eb = musicManager.scheduler.Play;
-                        channel.sendMessageEmbeds(eb).queue(message -> {
-                            musicManager.scheduler.PlayCmd.setColor(Color.green);
-                            musicManager.scheduler.PlayCmd.setAuthor("\uD83C\uDFB6 Starting to play:");
-                            musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
-                            message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
-                            musicManager.scheduler.PlayCmd.clear();
+
+                    if (event1 != null) {
+                        EmbedBuilder eb = new EmbedBuilder();
+                        if (musicManager.scheduler.queue.size() == 1 && !spotify) {
+                            event1.deferReply().queue();
+                            eb.setColor(new Color(21,86,80));
+                            eb.setAuthor("\uD83C\uDFB6 Starting to play:");
+                            eb.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
+                            event1.getHook().sendMessageEmbeds(eb.build()).queueAfter(2, TimeUnit.SECONDS);
+                            eb.clear();
                             musicManager.scheduler.Play = null;
-                        });
 
-                      /*  musicManager.scheduler.PlayCmd.clear();
-                        channel.sendMessage("\uD83C\uDFB6 Starting to play: `")
-                                .append(tracks.get(0).getInfo().title)
-                                .append('`')
-                                .queue();*/
-                    } else {
-                        String pos = String.valueOf(musicManager.scheduler.queue.size());
-
-                        MessageEmbed eb = musicManager.scheduler.Play;
-                        channel.sendMessageEmbeds(eb).queue(message -> {
-                            musicManager.scheduler.PlayCmd.setColor(Color.green);
+                        } else if (!spotify) {
+                            event1.deferReply().queue();
+                            String pos = String.valueOf(musicManager.scheduler.queue.size());
+                            musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
                             musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
                             musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Added to the queue at position `" + pos + "`");
-                            message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
-                        });
+                            event1.getHook().sendMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(2, TimeUnit.SECONDS);
+
+                        }
+                    } else {
+                        if (musicManager.scheduler.queue.size() == 1) {
+                            MessageEmbed eb = musicManager.scheduler.Play;
+                            channel.sendMessageEmbeds(eb).queue(message -> {
+                                musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
+                                musicManager.scheduler.PlayCmd.setAuthor("\uD83C\uDFB6 Starting to play:");
+                                musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
+                                message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
+                                musicManager.scheduler.PlayCmd.clear();
+                                musicManager.scheduler.Play = null;
+                            });
+
+                        } else if (!spotify) {
+                            String pos = String.valueOf(musicManager.scheduler.queue.size());
+
+                            MessageEmbed eb = musicManager.scheduler.Play;
+                            channel.sendMessageEmbeds(eb).queue(message -> {
+                                musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
+                                musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
+                                musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Added to the queue at position `" + pos + "`");
+                                message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
+                            });
 
                       /*  channel.sendMessage("\uD83C\uDFB5 `")
                                 .append(tracks.get(0).getInfo().title)
                                 .append("` added to the queue at position ")
                                 .append(pos)
                                 .queue();*/
+                        }
                     }
                 } else if (plist && !search) {
-                    MessageEmbed eb = musicManager.scheduler.Play;
-                    channel.sendMessageEmbeds(eb).queue(message -> {
-                        musicManager.scheduler.PlayCmd.setColor(Color.green);
+                    if (event1 != null) {
+                        event1.deferReply().queue();
+                        musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
                         // musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
                         musicManager.scheduler.PlayCmd.setTitle("✅  Playlist Loaded");
                         musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Adding to the queue `" + tracks.size() + "` tracks from the playlist `" + playlist.getName() + "`");
-                        message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
+                        event1.getHook().sendMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
                         musicManager.scheduler.PlayCmd.clear();
                         musicManager.scheduler.Play = null;
-                    });
 
-                    RequestMetadata xrm = rm;
+                    } else if (event2 != null) {
+                        MessageEmbed eb = musicManager.scheduler.Play;
+                        channel.sendMessageEmbeds(eb).queue(message -> {
+                            musicManager.scheduler.PlayCmd.setColor(new Color(21,86,80));
+                            // musicManager.scheduler.PlayCmd.setTitle(tracks.get(0).getInfo().title, tracks.get(0).getInfo().uri);
+                            musicManager.scheduler.PlayCmd.setTitle("✅  Playlist Loaded");
+                            musicManager.scheduler.PlayCmd.setDescription("\uD83C\uDFB5 Adding to the queue `" + tracks.size() + "` tracks from the playlist `" + playlist.getName() + "`");
+                            message.editMessageEmbeds(musicManager.scheduler.PlayCmd.build()).queueAfter(1, TimeUnit.SECONDS);
+                            musicManager.scheduler.PlayCmd.clear();
+                            musicManager.scheduler.Play = null;
+                        });
+                    }
+
 
                     for (AudioTrack track : tracks) {
                         musicManager.scheduler.queue(track);
-                        //  musicManager.scheduler.historyQueue(tracks.get(i));
-                        track.setUserData(xrm);
+                        track.setUserData(rm);
                     }
 
-                  /*  for (int i = 0; i < tracks.size(); i++) {
-                        musicManager.scheduler.queue(tracks.get(i));
-                        //  musicManager.scheduler.historyQueue(tracks.get(i));
-                        tracks.get(i).setUserData(xrm);
-                    }*/
+
                 } else if (search && !plist) {
-                    RequestMetadata s = rm;
                     musicManager.scheduler.searchQueue.clear();
                     musicManager.scheduler.search = 1;
                     for (int i = 0; i < 5; i++) {
                         musicManager.scheduler.searchQueue(tracks.get(i));
-                        tracks.get(i).setUserData(s);
+                        tracks.get(i).setUserData(rm);
                     }
                     final List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.searchQueue);
 
@@ -210,12 +268,12 @@ public class PlayerManager {
                         }
                         eb.setFooter("Click on the buttons below to play the track!");
                         event1.replyEmbeds(eb.build())
-                                .addActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.success("One", "1️⃣️"), net.dv8tion.jda.api.interactions.components.buttons.Button.success("Two", "2️⃣️"), net.dv8tion.jda.api.interactions.components.buttons.Button.success("Three", "3️⃣"), net.dv8tion.jda.api.interactions.components.buttons.Button.success("Four", "4️⃣"), net.dv8tion.jda.api.interactions.components.buttons.Button.success("Five", "5️⃣")).queue();
+                                .addActionRow(Button.success("One", "1️⃣️"), Button.success("Two", "2️⃣️"), Button.success("Three", "3️⃣"), Button.success("Four", "4️⃣"), Button.success("Five", "5️⃣")).queue();
                     }
                 }
             }
 
-            AudioPlaylist pl = new AudioPlaylist() {
+            final AudioPlaylist pl = new AudioPlaylist() {
                 @Override
                 public String getName() {
                     return null;
@@ -239,13 +297,22 @@ public class PlayerManager {
 
             @Override
             public void noMatches() {
-                channel.sendMessage("\uD83D\uDEAB  Uh oh! Nothing found by " + trackUrl).queue();
+                if (event1 == null) {
+                    channel.sendMessage("\uD83D\uDEAB  Uh oh! Nothing found by " + trackUrl).queue();
+                } else {
+                    event1.reply("\uD83D\uDEAB  Uh oh! Nothing found by " + trackUrl).queue();
+                }
             }
 
 
             @Override
             public void loadFailed(FriendlyException exception) {
-                channel.sendMessage("⭕ Failed to load! Error: " + exception.getMessage()).queue();
+
+                if (event1 == null) {
+                    channel.sendMessage("⭕ Failed to load! Error: " + exception.getMessage()).queue();
+                } else {
+                    event1.reply("⭕ Failed to load! Error: " + exception.getMessage()).queue();
+                }
             }
         });
     }

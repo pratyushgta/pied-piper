@@ -6,24 +6,13 @@ import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import org.jetbrains.annotations.NotNull;
 
-/**
- * This class contains methods to change player volume
- * For Discord SLASH COMMANDS
- * @author Pratyush Kumar (pratyushgta@gmail.com)
- * Please refer the Pied Piper Docs for more info
- */
-
-public class VolumeSlashCommand extends ListenerAdapter {
-    @Override
-    public void onSlashCommand(@NotNull SlashCommandEvent event) {
-        if (event.getName().equals("volume")) {
-            OptionMapping option = event.getOption("value");
+public class VideoSlashCommand extends ListenerAdapter {
+    public void onSlashCommand(SlashCommandEvent event) {
+        if (event.getName().equals("video")) {
             TextChannel channel = event.getTextChannel();
             VoiceChannel connectedChannel = event.getMember().getVoiceState().getChannel();
             VoiceChannel SelfConnected = event.getGuild().getSelfMember().getVoiceState().getChannel();
@@ -42,16 +31,13 @@ public class VolumeSlashCommand extends ListenerAdapter {
             final AudioPlayer audioPlayer = musicManager.audioPlayer;
             final AudioTrack track = audioPlayer.getPlayingTrack();
 
-            if(option==null)
-            {
-                int vol = musicManager.scheduler.player.getVolume();
-                event.reply("\uD83D\uDD0A Current volume is: " + vol + "%").queue();
+            if (track == null) {
+                event.reply("⚠️ Umm...cannot show your wedding video. It never happened.").queue();
                 return;
+            } else {
+                event.reply(track.getInfo().uri).queue();
             }
-            int volume = (int) option.getAsLong();
-
-            musicManager.scheduler.player.setVolume(volume);
-            event.reply("\uD83D\uDD0A Volume changed to: " + volume + "%").queue();
         }
     }
 }
+

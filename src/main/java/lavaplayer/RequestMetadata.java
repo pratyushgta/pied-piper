@@ -3,6 +3,12 @@ package lavaplayer;
 
 import net.dv8tion.jda.api.entities.User;
 
+/**
+ * This class contains methods for processing metadata
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class RequestMetadata
 {
     public static final RequestMetadata EMPTY = new RequestMetadata(null);

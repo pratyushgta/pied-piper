@@ -3,6 +3,12 @@ package lavaplayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 
+/**
+ *
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ *
+ */
+
 public class GuildMusicManager {
     public final AudioPlayer audioPlayer;
     public final TaskScheduler scheduler;

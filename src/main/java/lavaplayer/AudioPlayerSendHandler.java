@@ -10,6 +10,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ *
+ */
+
 public class AudioPlayerSendHandler implements AudioSendHandler {
     private final AudioPlayer audioPlayer;
     private final ByteBuffer buffer;

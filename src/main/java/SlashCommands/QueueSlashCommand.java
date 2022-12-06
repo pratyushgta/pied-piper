@@ -8,10 +8,11 @@ import lavaplayer.RequestMetadata;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.Button;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -22,6 +23,15 @@ import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class contains methods for displaying the queue
+ * For Discord SLASH COMMANDS
+ *
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ * BetterQueue by Pratyush Kumar
+ */
+
 public class QueueSlashCommand extends ListenerAdapter {
 
     int pg = 0;
@@ -29,20 +39,20 @@ public class QueueSlashCommand extends ListenerAdapter {
     int end = 0;
 
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("queue") && Objects.equals(event.getSubcommandName(), "view")) {
 
             TextChannel channel = event.getTextChannel();
             final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
             final BlockingQueue<AudioTrack> queue = musicManager.scheduler.queue;
 
-            if (queue.isEmpty() && musicManager.scheduler.historyQueue.isEmpty()) {
+            if (queue.isEmpty() && musicManager.scheduler.pointer == -1) {
                 event.reply("⭕ Current Queue is empty!").queue();
                 return;
-            } else if (queue.isEmpty() && musicManager.scheduler.historyQueue.size() > 1) {
+            } else if (queue.isEmpty() && musicManager.scheduler.pointer > 1) {
                 event.reply("⭕ Current Queue is empty! Use `-p` to replay the previous queue.").queue();
                 return;
-            } else if (queue.isEmpty() && musicManager.scheduler.historyQueue.size() == 1) {
+            } else if (queue.isEmpty() && musicManager.scheduler.pointer == 1) {
                 event.reply("⭕ Current Queue is empty! Use `-p` to replay the previous track.").queue();
                 return;
             }
@@ -66,7 +76,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
 
@@ -74,7 +84,12 @@ public class QueueSlashCommand extends ListenerAdapter {
                 final AudioTrack track = trackList.get(i);
                 final AudioTrackInfo info = track.getInfo();
                 RequestMetadata rm = trackList.get(i).getUserData(RequestMetadata.class);
-                eb.addField((i + 1) + ". " + info.title, "`[" + formatTime(track.getDuration()) + "]` by " + info.author + " `[" + rm.user.username + "]`", false);
+                if (i == musicManager.scheduler.pointer) {
+                    eb.addField("","**⬇ ⬇ ⬇ ⬇     NOW PLAYING**",false);
+                    eb.addField((i + 1) + ". " + info.title, "`[" + formatTime(track.getDuration()) + "]` by " + info.author + " `[" + rm.user.username + "]`", false);
+                    eb.addField("⬆ ⬆ ⬆ ⬆   NOW PLAYING", "",false);
+                } else
+                    eb.addField((i + 1) + ". " + info.title, "`[" + formatTime(track.getDuration()) + "]` by " + info.author + " `[" + rm.user.username + "]`", false);
             }
 
             if (trackList.size() > trackCount) {
@@ -87,17 +102,17 @@ public class QueueSlashCommand extends ListenerAdapter {
 
             if (queue.size() > 10) {
                 event.replyEmbeds(eb.build())
-                        .addActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .addActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
             } else {
                 event.replyEmbeds(eb.build())
-                        .addActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .addActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
 
             }
         }
     }
 
     @Override
-    public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+    public void onButtonClick(@NotNull ButtonClickEvent event) {
 
         TextChannel channel = event.getTextChannel();
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(channel.getGuild());
@@ -129,7 +144,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
                /* RequestMetadata rms = musicManager.audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
@@ -149,7 +164,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             }
 
             event.editMessageEmbeds(eb.build())
-                    .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                    .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
 
 
         } else if (event.getComponentId().equals("Next")) {
@@ -178,7 +193,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
                /* RequestMetadata rms = musicManager.audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
@@ -198,7 +213,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             }
 
             event.editMessageEmbeds(eb.build())
-                    .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                    .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
 
 
         } else if (event.getComponentId().equals("Clear")) {
@@ -229,18 +244,19 @@ public class QueueSlashCommand extends ListenerAdapter {
 
 
             musicManager.scheduler.queue.clear();
-            musicManager.scheduler.historyQueue.clear();
+            musicManager.scheduler.pointer=-1;
+
 
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("⭕ The queue has been cleared!");
             // eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
 
             event.editMessageEmbeds(eb.build())
-                    .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear","⭕ Clear ").asDisabled(), Button.success("RepeatAll", "\uD83D\uDD01").asDisabled(), Button.success("Shuffle", "\uD83D\uDD00").asDisabled()).queue();
+                    .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear", "⭕ Clear ").asDisabled(), Button.success("RepeatAll", "\uD83D\uDD01").asDisabled(), Button.success("Shuffle", "\uD83D\uDD00").asDisabled()).queue();
 
         } else if (event.getComponentId().equals("Shuffle")) {
 
@@ -298,7 +314,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
                /* RequestMetadata rms = musicManager.audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
@@ -319,10 +335,10 @@ public class QueueSlashCommand extends ListenerAdapter {
 
             if (queue.size() > 10) {
                 event.editMessageEmbeds(eb.build())
-                        .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
             } else {
                 event.editMessageEmbeds(eb.build())
-                        .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
 
             }
         } else if (event.getComponentId().equals("RepeatAll")) {
@@ -354,17 +370,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             final boolean newRepeatAll = !musicManager.scheduler.repeatAll;
 
             musicManager.scheduler.repeatAll = newRepeatAll;
-            if (musicManager.scheduler.repeatAll) {
-                musicManager.scheduler.rephistory = true;
-                musicManager.scheduler.historyQueue.clear();
-                final List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.queue);
 
-                for (int i = 0; i < trackList.size(); i++) {
-                    musicManager.scheduler.historyQueue.offer(trackList.get(i).makeClone());
-                }
-            } else {
-                musicManager.scheduler.rephistory = false;
-            }
 
             final List<AudioTrack> trackList = new ArrayList<>(queue);
 
@@ -388,7 +394,7 @@ public class QueueSlashCommand extends ListenerAdapter {
             EmbedBuilder eb = musicManager.scheduler.QueueCmd;
             eb.clear();
             eb.setTitle("\uD83D\uDDCF Next in Queue | `" + queue.size() + "` tracks " + (musicManager.scheduler.repeatAll ? "| \uD83D\uDD01 " : "") + (musicManager.scheduler.repeating ? "| \uD83D\uDD02" : ""));
-            eb.setColor(Color.PINK);
+            eb.setColor(new Color(239,149,157));
             eb.setDescription("Use `-qp <track #>` to play a specific track from the queue | `-add <song_name/URL>` to add a YT song/ playlist | `-remove <track # / @username` to remove a song");
 
                /* RequestMetadata rms = musicManager.audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
@@ -409,10 +415,10 @@ public class QueueSlashCommand extends ListenerAdapter {
 
             if (queue.size() > 10) {
                 event.editMessageEmbeds(eb.build())
-                        .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .setActionRow(Button.success("Prev", "⬅️"), Button.success("Next", "➡️"), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), Button.success("Shuffle", "\uD83D\uDD00")).queue();
             } else {
                 event.editMessageEmbeds(eb.build())
-                        .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear","⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
+                        .setActionRow(Button.success("Prev", "⬅️").asDisabled(), Button.success("Next", "➡️").asDisabled(), Button.success("Clear", "⭕ Clear "), Button.success("RepeatAll", "\uD83D\uDD01"), queue.size() == 1 ? Button.success("Shuffle", "\uD83D\uDD00").asDisabled() : Button.success("Shuffle", "\uD83D\uDD00")).queue();
 
             }
 

@@ -5,16 +5,24 @@ import lavaplayer.GuildMusicManager;
 import lavaplayer.PlayerManager;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class contains methods for repeating a single track or the queue
+ * For Discord SLASH COMMANDS
+ * @author Pratyush Kumar (pratyushgta@gmail.com)
+ * Please refer the Pied Piper Docs for more info
+ */
+
 public class RepeatSlashCommand extends ListenerAdapter {
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
         if (event.getName().equals("repeatall")) {
             TextChannel channel = event.getTextChannel();
             VoiceChannel connectedChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
@@ -40,17 +48,6 @@ public class RepeatSlashCommand extends ListenerAdapter {
                 event.replyFormat("\uD83D\uDD02 This song has been set to **%s**", newRepeating ? "repeating" : "not repeating").queue();
             } else {
                 musicManager.scheduler.repeatAll = newRepeatAll;
-                if (musicManager.scheduler.repeatAll) {
-                    musicManager.scheduler.rephistory = true;
-                    musicManager.scheduler.historyQueue.clear();
-                    final List<AudioTrack> trackList = new ArrayList<>(musicManager.scheduler.queue);
-
-                    for (int i = 0; i < trackList.size(); i++) {
-                        musicManager.scheduler.historyQueue.offer(trackList.get(i).makeClone());
-                    }
-                } else {
-                    musicManager.scheduler.rephistory = false;
-                }
                 event.replyFormat("\uD83D\uDD01 The queue has been set to **%s**", newRepeatAll ? "repeating" : "not repeating").queue();
             }
         } else if (event.getName().equals("loop")) {
@@ -73,11 +70,6 @@ public class RepeatSlashCommand extends ListenerAdapter {
             final boolean newRepeatAll = !musicManager.scheduler.repeatAll;
 
             musicManager.scheduler.repeating = newRepeating;
-            if (!musicManager.scheduler.repeatAll) {
-                musicManager.scheduler.skiphistory = true;
-                musicManager.scheduler.historyQueue.add(musicManager.audioPlayer.getPlayingTrack());
-            } else
-                musicManager.scheduler.skiphistory = false;
             event.replyFormat("\uD83D\uDD02 This song has been set to **%s**", newRepeating ? "repeating" : "not repeating").queue();
         }
         else if (event.getName().equals("restart")) {
