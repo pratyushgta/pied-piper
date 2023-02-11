@@ -1,7 +1,13 @@
 # Pied Piper- The Music Bot
 ![Pied Piper](https://github.com/pratyushgta/pied-piper/blob/master/Pied%20Piper.png)
 
-Pied Piper is an incredibly easy to use music bot for Discord that makes it easy to listen to any of your favorite songs with a group of friends or by yourself! This easy-to-host bot was made using JDA and Lavaplayer.
+Pied Piper is your personal music companion on Discord. With its simple and clean interface, you can now enjoy all your favorite tunes with just a few clicks. Whether you want to listen to music with a group of friends or by yourself, Pied Piper makes it all possible.
+
+Powered by Lavaplayer, you can now experience high-definition music playback that will blow your mind. The improved BetterQueue technology ensures easy queuing of your favorite songs, so you never have to wait for your turn to listen.
+
+Not only does Pied Piper support Slash commands, but it also seamlessly plays tracks and playlists from both YouTube and Spotify. And the best part? You don't have to be tech-savvy to use it. All you need is a Discord Bot token, and you're good to go!
+
+Pied Piper has got the essentials right and includes all the basic music bot functions that you'll ever need. So, say goodbye to complicated music bots, and hello to Pied Piper, your new music partner on Discord.
 
 ## Features
 - High-definition music playback powered by Lavaplayer
