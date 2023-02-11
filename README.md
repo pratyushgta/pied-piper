@@ -31,4 +31,4 @@ I strongly believe that open source encourages innovation through collaboration.
 ## Questions, Reports, & Requests
 If you have a question, need troubleshooting help, or want to report an issue, please check out [PogDoc](https://www.youtube.com/watch?v=q3WC-X7xDNo) before getting in touch with the Pied Piper Support#1168 on Discord. If you'd like to suggest a feature or report a reproducible bug, please open an Issue on this repository.
 
-> *Huge shoutout to JDA & Lavaplayer for making this bot a reality. A bot by Pratyush @pratyushgta.*
+> *Made using JDA & Lavaplayer. A bot by Pratyush @pratyushgta.*
